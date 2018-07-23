@@ -22,8 +22,7 @@ class ENLI_Model(nn.Module):
         self.drop_rate = config.get('dropout')
         self.dropout_layer = nn.Dropout(self.drop_rate)
         self.word_embs = nn.Embedding(config['n_words'],self.word_dim,padding_idx=0)
-        # if worddicts is not None:
-        #     self.init_pretrain(config['embeddings'],config['n_words'],worddicts)
+
         self.encoder = nn.LSTM(config.get('word_dim'), config.get('hidden_units'),bidirectional=True)
         self.decoder = nn.LSTM(config.get('hidden_units'), config.get('hidden_units'),bidirectional=True)
         self.projection = nn.Sequential(
@@ -38,9 +37,7 @@ class ENLI_Model(nn.Module):
             nn.Linear(config.get('hidden_units'), 4),
             nn.Softmax(dim=-1)
         )
-        #self.init_params()
-        #self.init_npz(config['gold_embeddings'])
-        #self.init_pretrain(config['embeddings'],config['n_words'],worddicts)
+        self.init_pretrain(config['embeddings'],config['n_words'],worddicts)
 
 
     def attention_layer(self,ctx1,ctx2,x1_mask,x2_mask):
@@ -104,13 +101,6 @@ class ENLI_Model(nn.Module):
         init.fflayer_init(self.ff_layer_output[0], False)
         init.fflayer_init(self.projection[0], False)
 
-    def init_npz(self,filename):
-        params = numpy.load(filename)
-        self.copy_val(self.word_embs.weight,np.transpose(params['Wemb']))
-
-    def copy_val(self,pytensor,np_val):
-        print(pytensor.size(),np.transpose(np_val).shape)
-        pytensor.data.copy_(torch.from_numpy(np.transpose(np_val)))
 
     def forward(self,x1,x1_mask,x2,x2_mask):
         #look up word embedding  32 x 13 x 200  -> 13 x 32 x 200
@@ -121,12 +111,14 @@ class ENLI_Model(nn.Module):
         enc_1 = (self.encoder(x1_emb)[0]).transpose(0,1) * x1_mask[:, :, None]
         enc_2 = (self.encoder(x2_emb)[0]).transpose(0,1) * x2_mask[:, :, None]
 
+        # attention layer
         att_1,att_2 = self.attention_layer(enc_1,enc_2,x1_mask,x2_mask)
 
+        # projection layer
         att_1 = self.dropout_layer(self.projection(att_1.transpose(0,1)))
         att_2 = self.dropout_layer(self.projection(att_2.transpose(0,1)))
 
-        # decoder
+        # decoder layer
         dec_1 = (self.decoder(att_1)[0]).transpose(0,1) * x1_mask[:, :, None]
         dec_2 = (self.decoder(att_2)[0]).transpose(0,1) * x2_mask[:, :, None]
 

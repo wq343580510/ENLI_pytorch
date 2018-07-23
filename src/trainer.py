@@ -116,7 +116,6 @@ def train():
             ud_start = time.time()
             probs = model(x1,x1_mask,x2,x2_mask)
             loss = F.cross_entropy(probs, y)
-            torch.nn.BCELoss
             loss.backward()
             #nn.utils.clip_grad_norm(model.parameters(), config['clip_c'])
             optimizer.step()

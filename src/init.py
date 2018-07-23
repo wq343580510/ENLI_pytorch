@@ -3,8 +3,6 @@ import torch.nn as nn
 from torch.autograd import Variable
 import numpy
 
-
-
 def fflayer_init(layer,ortho=True):
     w = norm_weight(layer.out_features,layer.in_features,0.01,ortho)
     layer.weight.data.copy_(torch.from_numpy(w))
