@@ -1,0 +1,40 @@
+model:
+    mode : train
+    train :
+        pre : ./train_data/shuffle.utf8.query
+        hyp : ./train_data/shuffle.utf8.title
+        lab : ./train_data/shuffle.utf8.label
+    dev :
+        pre : ./train_data/bs_new.utf8.query
+        hyp : ./train_data/bs_new.utf8.title
+        lab : ./train_data/bs_new.utf8.label
+    test :
+        pre : ./train_data/pa.utf8.query
+        hyp : ./train_data/pa.utf8.title
+        lab : ./train_data/pa.utf8.label
+    embeddings : ./train_data/embeddings
+    gold_embeddings : ./train_data/embeddings
+    vocab : ./train_data/enli.dict
+    saveto : ./save_files/enli.pkl
+    history_error : ./save_files/his.job
+
+    dispFreq : 100
+    validFreq : 10000
+    saveFreq : 10000
+    finish_after : 10000000
+
+    n_words : 42394
+    max_epochs : 5000
+    reload : False
+    patience : 7
+    decay_c : 0.
+    clip_c : 10.
+    lrate : 0.0004
+    maxlen : 100
+    batch_size : 32
+    use_gpu : False
+    gpu_id : 2
+    word_dim: 200
+    dropout: 0.5
+    hidden_units: 200
+    use_gpu: False
