@@ -8,10 +8,10 @@ import numpy
 import torch
 import torch.nn.functional as F
 import yaml
+
 from data_iterator import TextIterator
 from model import ENLI_Model
-
-from src.utils import prepare_data, unrap,pred_acc
+from utils import prepare_data, unrap,pred_acc
 
 logger = logging.getLogger(__name__)
 
@@ -58,12 +58,17 @@ def train():
 
     model = ENLI_Model(len(worddicts),config,worddicts)
 
+    use_gpu = config['use_gpu']
+    if config['use_gpu']:
+        os.environ["CUDA_VISIBLE_DEVICES"] = str(config['gpu_id'])
+        #torch.cuda.set_device(config['gpu_id'))
+        model.cuda()
+
     if config['reload'] and os.path.exists(config['saveto']):
         print('Reload parameters')
         model.load_state_dict(torch.load(config['saveto']))
         # load_params(saveto,params)
 
-    use_gpu = config['use_gpu']
     if config['mode'] == 'test':
         model.eval()
         vres = pred_acc(model, prepare_data, valid, use_gpu)
@@ -75,10 +80,6 @@ def train():
         print('bi test accuracy', tres[1])
         print('test auc', tres[2])
 
-    if config['use_gpu']:
-        os.environ["CUDA_VISIBLE_DEVICES"] = str(config['gpu_id'])
-        #torch.cuda.set_device(config['gpu_id'))
-        model.cuda()
 
     lrate = config['lrate']
     optimizer = torch.optim.Adam(model.parameters(), lr=lrate, weight_decay=config['decay_c'])

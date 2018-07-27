@@ -24,7 +24,7 @@ def unrap(tensor,use_cuda=False):
         return tensor
 
 
-def pred_acc(model, prepare_data, iterator,use_gpu):
+def pred_acc(model, prepare_data, iterator,use_gpu = False):
     """
     Just compute the accuracy
     f_pred: Theano fct computing the prediction
@@ -56,6 +56,7 @@ def pred_acc(model, prepare_data, iterator,use_gpu):
     muti_valid_acc = 1.0 * muti_valid_acc / n_done
     bi_valid_acc = 1.0 * bi_valid_acc / n_done
     return muti_valid_acc,bi_valid_acc,auc
+
 
 def prepare_data(seqs_x, seqs_y, labels,use_gpu = False, maxlen=None):
     lengths_x = [len(s) for s in seqs_x]

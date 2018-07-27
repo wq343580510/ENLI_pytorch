@@ -1,8 +1,11 @@
 # -*- coding:utf-8 -*-
 import numpy as np
-
-from src import init
-from src.init import *
+import torch
+import torch.nn as nn
+from torch.autograd import Variable
+import numpy
+import init
+from init import *
 
 
 # encoder
@@ -14,10 +17,9 @@ from src.init import *
 
 
 class ENLI_Model(nn.Module):
-    def __init__(self,vocab_size,config,worddicts = None):
+    def __init__(self,config,worddicts = None,load_pretrain = True):
         super(ENLI_Model, self).__init__()
 
-        #build encoder
         self.word_dim = config.get('word_dim')
         self.drop_rate = config.get('dropout')
         self.dropout_layer = nn.Dropout(self.drop_rate)
@@ -37,7 +39,8 @@ class ENLI_Model(nn.Module):
             nn.Linear(config.get('hidden_units'), 4),
             nn.Softmax(dim=-1)
         )
-        self.init_pretrain(config['embeddings'],config['n_words'],worddicts)
+        if load_pretrain:
+            self.init_pretrain(config['embeddings'],config['n_words'],worddicts)
 
 
     def attention_layer(self,ctx1,ctx2,x1_mask,x2_mask):
@@ -70,7 +73,7 @@ class ENLI_Model(nn.Module):
         inp1 = torch.cat([ctx1, ctx1_, ctx1 * ctx1_, ctx1 - ctx1_], dim=2)
         inp2 = torch.cat([ctx2, ctx2_, ctx2 * ctx2_, ctx2 - ctx2_], dim=2)
 
-        return inp1,inp2
+        return inp1,inp2,alpha,beta
 
     def pooling_layer(self,ctx1,mask1,ctx2,mask2):
         logit1 = ctx1.sum(1) / mask1.sum(1,keepdim=True)
@@ -80,7 +83,6 @@ class ENLI_Model(nn.Module):
         return torch.cat([logit1,logit2,logit3,logit4],dim=1)
 
     def init_pretrain(self,filename,n_words,worddicts):
-        #from tqdm import tqdm
         count = 0
         print('load pretrain')
         for line in open(filename, 'r',encoding='utf8').readlines():
@@ -102,7 +104,8 @@ class ENLI_Model(nn.Module):
         init.fflayer_init(self.projection[0], False)
 
 
-    def forward(self,x1,x1_mask,x2,x2_mask):
+
+    def forward(self,x1,x1_mask,x2,x2_mask,ret_att = False):
         #look up word embedding  32 x 13 x 200  -> 13 x 32 x 200
         x1_emb = self.dropout_layer(self.word_embs(x1).transpose(0,1))
         x2_emb = self.dropout_layer(self.word_embs(x2).transpose(0,1))
@@ -112,8 +115,9 @@ class ENLI_Model(nn.Module):
         enc_2 = (self.encoder(x2_emb)[0]).transpose(0,1) * x2_mask[:, :, None]
 
         # attention layer
-        att_1,att_2 = self.attention_layer(enc_1,enc_2,x1_mask,x2_mask)
-
+        att_1,att_2,alpha,beta = self.attention_layer(enc_1,enc_2,x1_mask,x2_mask)
+        if ret_att:
+            return alpha,beta
         # projection layer
         att_1 = self.dropout_layer(self.projection(att_1.transpose(0,1)))
         att_2 = self.dropout_layer(self.projection(att_2.transpose(0,1)))
