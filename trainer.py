@@ -193,7 +193,7 @@ def train():
         f.write(','.join(map(str, valid_acc_record)) + '\n')
 
     model.eval()
-    vres = pred_acc(model , prepare_data,valid,use_gpu)
+    vres = pred_acc(model, prepare_data,valid,use_gpu)
     print('muti Valid accuracy', vres[0])
     print('bi Valid accuracy', vres[1])
     print('valid auc', vres[2])
