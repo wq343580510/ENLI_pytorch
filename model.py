@@ -73,7 +73,7 @@ class ENLI_Model(nn.Module):
         inp1 = torch.cat([ctx1, ctx1_, ctx1 * ctx1_, ctx1 - ctx1_], dim=2)
         inp2 = torch.cat([ctx2, ctx2_, ctx2 * ctx2_, ctx2 - ctx2_], dim=2)
 
-        return inp1,inp2,alpha,beta
+        return inp1,inp2
 
     def pooling_layer(self,ctx1,mask1,ctx2,mask2):
         logit1 = ctx1.sum(1) / mask1.sum(1,keepdim=True)
@@ -95,16 +95,6 @@ class ENLI_Model(nn.Module):
         print('I found {} words in the embedding file'.format(count))
 
 
-    def init_params(self):
-        init.bilstm_init(self.encoder)
-        init.bilstm_init(self.decoder)
-        init.embeddings_init(self.word_embs)
-        init.fflayer_init(self.ff_layer_1[0], False)
-        init.fflayer_init(self.ff_layer_output[0], False)
-        init.fflayer_init(self.projection[0], False)
-
-
-
     def forward(self,x1,x1_mask,x2,x2_mask,ret_att = False):
         #look up word embedding  32 x 13 x 200  -> 13 x 32 x 200
         x1_emb = self.dropout_layer(self.word_embs(x1).transpose(0,1))
@@ -115,9 +105,8 @@ class ENLI_Model(nn.Module):
         enc_2 = (self.encoder(x2_emb)[0]).transpose(0,1) * x2_mask[:, :, None]
 
         # attention layer
-        att_1,att_2,alpha,beta = self.attention_layer(enc_1,enc_2,x1_mask,x2_mask)
-        if ret_att:
-            return alpha,beta
+        att_1,att_2 = self.attention_layer(enc_1,enc_2,x1_mask,x2_mask)
+
         # projection layer
         att_1 = self.dropout_layer(self.projection(att_1.transpose(0,1)))
         att_2 = self.dropout_layer(self.projection(att_2.transpose(0,1)))

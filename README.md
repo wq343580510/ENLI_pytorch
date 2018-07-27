@@ -5,4 +5,7 @@ This is the implementation of Enhanced LSTM for Natural Language Inference on Py
 requirement:
 
 pytorch 0.3.1
+
 python 3.6
+
+usage : python trainer.py
